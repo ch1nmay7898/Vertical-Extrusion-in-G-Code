@@ -4,7 +4,7 @@
 import re
 import pandas as pd
 import os
-from google.colab import files
+import math
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -53,6 +53,10 @@ for match in matches_E:
 
 for match in matches_F:
     values_F.append(float(match))
+
+E_val_diff = values_E[-1] - values_E[-2]
+point_dist = math.sqrt(((values_X[-1] - values_X[-2])**2) + ((values_Y[-1] - values_Y[-2])**2))
+E_per_point = (E_val_diff / point_dist)
 
 count_X = len(values_X)
 count_Y = len(values_Y) 
@@ -117,23 +121,36 @@ x, y = zip(*all_values)
 plt.scatter(x, y)
 plt.show()
 
-def Z_motion(a, b, c, e, f):
-  high_Z = max(values_Z) + 0.1
-  current_X = values_X[-1]
-  current_Y = values_Y[-1]
-  line1 = "G1 "+"X"+str(current_X)+" Y"+str(current_Y)+" Z"+str('%.2f'%high_Z)+" F"+str(f)
-  line2 = "G1 "+"X"+str(a)+" Y"+str(b)+" Z"+str('%.2f'%high_Z)+" F"+str(f)
-  line3 = "G1 "+"X"+str(a)+" Y"+str(b)+" Z"+str('%.2f'%(high_Z - 0.1))+" F"+str(f)
-  line4 = "G1 "+"X"+str(a)+" Y"+str(b)+" Z"+str(c)+" E"+str(e)+" F"+str(f)
-  code_addition = line1+"\n"+line2+"\n"+line3+"\n"+line4
-  return code_addition
+def Z_motion(a, b, c, t, f):
+  if (t == 1):
+    high_Z = max(values_Z) + 0.1
+    current_X = values_X[-1]
+    current_Y = values_Y[-1]
+    line1 = "G1 "+"X"+str(current_X)+" Y"+str(current_Y)+" Z"+str('%.2f'%high_Z)+" F"+str(f)
+    line2 = "G1 "+"X"+str(a)+" Y"+str(b)+" Z"+str('%.2f'%high_Z)+" F"+str(f)
+    line3 = "G1 "+"X"+str(a)+" Y"+str(b)+" Z"+str('%.2f'%(high_Z - 0.1))+" F"+str(f)
+    e = (E_per_point * c) + values_E[-1]
+    line4 = "G1 "+"X"+str(a)+" Y"+str(b)+" Z"+str(c)+" E"+str('%.3f'%e)+" F"+str(f)
+    code_addition = line1+"\n"+line2+"\n"+line3+"\n"+line4
+    return code_addition
+  elif (t == 0):
+    high_Z = max(values_Z) + 0.1
+    current_X = values_X[-1]
+    current_Y = values_Y[-1]
+    line1 = "G1 "+"X"+str(current_X)+" Y"+str(current_Y)+" Z"+str('%.2f'%high_Z)+" F"+str(f)
+    line2 = "G1 "+"X"+str(a)+" Y"+str(b)+" Z"+str('%.2f'%high_Z)+" F"+str(f)
+    line3 = "G1 "+"X"+str(a)+" Y"+str(b)+" Z"+str('%.2f'%(high_Z - 0.1))+" F"+str(f)
+    line4 = "G1 "+"X"+str(a)+" Y"+str(b)+" Z"+str(c)+" E"+str(e)+" F"+str(f)
+    code_addition = line1+"\n"+line2+"\n"+line3+"\n"+line4
+    return code_addition
+  else:
+    return (print("Enter 1 or 0"))
 
 f1.close()
 f1 = open("sample.txt", "at")
 
 
-
-added_code = Z_motion(87.35, 81.69, 23, 102, values_F[-1])
+added_code = Z_motion(87.35, 81.69, 23, 1, values_F[-1])
 
 f1.write(added_code)
 f1.close()
