@@ -1,9 +1,9 @@
+import plotly.express as px
 import tkinter as tk
 import re
 import pandas as pd
 import os
 import math
-import plotly.express as px
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image, ImageTk
@@ -28,12 +28,6 @@ var1 = tk.IntVar()
 c1 = tk.Checkbutton(window, text='Use Extrusion',variable=var1, onvalue=1, offvalue=0)
 
 text_box = tk.Text()
-
-
-#def counter(co):
-    #count = co+1
-    #return count
-
 
 def avail_points():
     init_gcode = text_box.get("1.0", tk.END)
@@ -107,24 +101,11 @@ def avail_points():
                     T = X
                     if ((T+1) >= high_X):
                         break;
-            """
-            for k in range(temp_X):
-            Y = values_Y[i]
-            X += 1
-            #f = "|" + str('%.2f'%X) + "," + str('%.2f'%Y) + "|"
-            f = ('%.2f'%X, '%.2f'%Y)
-            available_points.append(f)
-            #print('%.2f'%X, '%.2f'%Y, sep=" , ")
-            """
+            
 
         elif (values_X[i] == values_X[i+1]):
             X = values_X[i]
-            """
-            temp_Y1 = (values_Y[i] * 10)
-            temp_Y2 = (values_Y[i+1] * 10)
-            temp_Y = abs(temp_Y2 - temp_Y1)
-            temp_Y = int(temp_Y/10)
-            """
+            
             if (values_Y[i] > values_Y[i+1]):
                 Y = values_Y[i]
                 low_Y = values_Y[i+1]
@@ -145,27 +126,9 @@ def avail_points():
                     T = Y
                     if ((T+1) >= high_Y):
                         break;
-            """
-            for k in range(temp_Y):
-            X = values_X[i]
-            if (values_Y[i] > values_Y[i+1]):
-                Y -= 1 
-            else:
-                Y += 1
-            #f = "|" + str('%.2f'%X) + "," + str('%.2f'%Y) + "|"
-            f = ('%.2f'%X, '%.2f'%Y)
-            available_points.append(f)
-            #print('%.2f'%X, '%.2f'%Y, sep=" , ")
-            """
 
         else:
             m = ((values_Y[i+1] - values_Y[i])/(values_X[i+1] - values_X[i]))
-            """
-            temp_X1 = (values_X[i] * 10)
-            temp_X2 = (values_X[i+1] * 10)
-            temp_X = abs(temp_X2 - temp_X1)
-            temp_X = int(temp_X/10)
-            """
 
             if ((values_X[i+1] > values_X[i]) and (values_Y[i+1] > values_Y[i])):
                 hyp = math.sqrt(((values_X[i] - values_X[i+1])**2) + ((values_Y[i] - values_Y[i+1])**2))
@@ -228,29 +191,7 @@ def avail_points():
                         break;
 
 
-            """
-            if (values_X[i] > values_X[i+1]):
-            X = values_X[i+1]
-            else:
-            X = values_X[i]
-
-            for j in range(temp_X):
-            if (values_X[i] < values_X[i+1]):
-                dist_X = values_X[i+1] - values_X[i]
-                hyp = math.sqrt(((values_X[i] - values_X[i+1])**2) + ((values_Y[i] - values_Y[i+1])**2))
-                X_per_unit_hyp = dist_X / hyp
-                X -= (0.1*X_per_unit_hyp) 
-            else:
-                dist_X = values_X[i] - values_X[i+1]
-                hyp = math.sqrt(((values_X[i] - values_X[i+1])**2) + ((values_Y[i] - values_Y[i+1])**2))
-                X_per_unit_hyp = dist_X / hyp
-                X += (0.1*X_per_unit_hyp)
-            Y = (m*(X - values_X[i])) + values_Y[i]
-            #f = "|" + str('%.2f'%X) + "," + str('%.2f'%Y) + "|"
-            f = ('%.2f'%X, '%.2f'%Y)
-            available_points.append(f)
-            #print('%.2f'%X, '%.2f'%Y, sep=",")
-            """
+            
         #print(available_points)
         all_values.extend(available_points)
         available_points.clear()
@@ -259,13 +200,14 @@ def avail_points():
     x, y = zip(*all_values)
     x = list(map(float, x))
     y = list(map(float, y))
+    
+    plt.scatter(x, y)
+    plt.savefig('foo.png', bbox_inches='tight')
     df = pd.DataFrame()
     df['X'] = x
     df['Y'] = y
-    #plt.scatter(x, y)
-    #plt.savefig('foo.png', bbox_inches='tight')
     fig_inter = px.scatter(df, x = "X", y = "Y")
-    fig_inter.show("browser")
+    fig_inter.show(renderer="browser")
     
     def openNewWindow(): 
         newWindow = Toplevel(window) 
@@ -277,90 +219,7 @@ def avail_points():
         img = Label(newWindow, image=render)
         img.image = render
         img.pack()
-    #openNewWindow()
-    
-    
-    
-    """
-    all_values = []
-    available_points = []
-    for i in range(n):
-        f_init = ('%.2f'%values_X[i], '%.2f'%values_Y[i])
-        available_points.append(f_init)
-        f_fin = ('%.2f'%values_X[i+1], '%.2f'%values_Y[i+1])
-        available_points.append(f_fin)
-
-        if (values_Y[i] == values_Y[i+1]):
-            temp_X1 = (values_X[i] * 10)
-            temp_X2 = (values_X[i+1] * 10)
-            temp_X = abs(temp_X2 - temp_X1)
-            temp_X = int(temp_X/10)
-            if (values_X[i] > values_X[i+1]):
-                X = values_X[i+1]
-            else:
-                X = values_X[i]
-            for k in range(temp_X):
-                Y = values_Y[i]
-                X += 1
-                #f = "|" + str('%.2f'%X) + "," + str('%.2f'%Y) + "|"
-                f = ('%.2f'%X, '%.2f'%Y)
-                available_points.append(f)
-                #print('%.2f'%X, '%.2f'%Y, sep=" , ")
-
-        elif (values_X[i] == values_X[i+1]):
-            temp_Y1 = (values_Y[i] * 10)
-            temp_Y2 = (values_Y[i+1] * 10)
-            temp_Y = abs(temp_Y2 - temp_Y1)
-            temp_Y = int(temp_Y/10)
-            if (values_Y[i] > values_Y[i+1]):
-                Y = values_Y[i+1]
-            else:
-                Y = values_Y[i]
-            for k in range(temp_Y):
-                X = values_X[i]
-                if (values_Y[i] > values_Y[i+1]):
-                    Y -= 1 
-                else:
-                    Y += 1
-                #f = "|" + str('%.2f'%X) + "," + str('%.2f'%Y) + "|"
-                f = ('%.2f'%X, '%.2f'%Y)
-                available_points.append(f)
-                #print('%.2f'%X, '%.2f'%Y, sep=" , ")
-
-        else:
-            m = ((values_Y[i+1] - values_Y[i])/(values_X[i+1] - values_X[i]))
-            temp_X1 = (values_X[i] * 10)
-            temp_X2 = (values_X[i+1] * 10)
-            temp_X = abs(temp_X2 - temp_X1)
-            temp_X = int(temp_X/10)
-            if (values_X[i] > values_X[i+1]):
-                X = values_X[i+1]
-            else:
-                X = values_X[i]
-
-            for j in range(temp_X):
-                if (values_X[i] < values_X[i+1]):
-                    dist_X = values_X[i+1] - values_X[i]
-                    hyp = math.sqrt(((values_X[i] - values_X[i+1])**2) + ((values_Y[i] - values_Y[i+1])**2))
-                    X_per_unit_hyp = dist_X / hyp
-                    X -= (0.1*X_per_unit_hyp) 
-                else:
-                    dist_X = values_X[i] - values_X[i+1]
-                    hyp = math.sqrt(((values_X[i] - values_X[i+1])**2) + ((values_Y[i] - values_Y[i+1])**2))
-                    X_per_unit_hyp = dist_X / hyp
-                    X += (0.1*X_per_unit_hyp)
-                Y = (m*(X - values_X[i])) + values_Y[i]
-                #f = "|" + str('%.2f'%X) + "," + str('%.2f'%Y) + "|"
-                f = ('%.2f'%X, '%.2f'%Y)
-                available_points.append(f)
-                #print('%.2f'%X, '%.2f'%Y, sep=",")
-
-        #print(available_points)
-        all_values.extend(available_points)
-        available_points.clear()
-    """
-
-  
+    openNewWindow()
     
 
 

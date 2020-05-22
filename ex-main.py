@@ -1,9 +1,9 @@
-import plotly.express as px
 import tkinter as tk
 import re
 import pandas as pd
 import os
 import math
+import plotly.express as px
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image, ImageTk
@@ -259,14 +259,13 @@ def avail_points():
     x, y = zip(*all_values)
     x = list(map(float, x))
     y = list(map(float, y))
-    
-    plt.scatter(x, y)
-    plt.savefig('foo.png', bbox_inches='tight')
     df = pd.DataFrame()
     df['X'] = x
     df['Y'] = y
+    #plt.scatter(x, y)
+    #plt.savefig('foo.png', bbox_inches='tight')
     fig_inter = px.scatter(df, x = "X", y = "Y")
-    fig_inter.show(renderer="browser")
+    fig_inter.show("browser")
     
     def openNewWindow(): 
         newWindow = Toplevel(window) 
@@ -278,7 +277,7 @@ def avail_points():
         img = Label(newWindow, image=render)
         img.image = render
         img.pack()
-    openNewWindow()
+    #openNewWindow()
     
     
     
