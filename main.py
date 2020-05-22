@@ -190,12 +190,8 @@ def avail_points():
                     if (Y <= low_Y or X <= low_X):
                         break;
 
-
-            
-        #print(available_points)
         all_values.extend(available_points)
         available_points.clear()
-    #print("____________________________________________________________________________________________________________________")
 
     x, y = zip(*all_values)
     x = list(map(float, x))
