@@ -1,9 +1,9 @@
+import plotly.express as px
 import tkinter as tk
 import re
 import pandas as pd
 import os
 import math
-import plotly.express as px
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image, ImageTk
@@ -12,28 +12,93 @@ import PIL.Image
 import matplotlib.image as mpimg
 
 window = tk.Tk()
+window.title("Vertical 3D Printing")
+frame1 = Frame(window)
+frame2 = Frame(window)
+frame3 = Frame(window)
+frame4 = Frame(window)
+frame5 = Frame(window)
+frame1.pack()
+frame2.pack()
+frame3.pack()
+frame4.pack()
+frame5.pack()
 scrollbar = Scrollbar(window)
 
-greetings = tk.Label(text="Hello")
-greetings.pack()
+greetings = tk.Label(frame1, text="G-Code Editor")
+greetings.pack(pady=10)
 
-entryX = tk.Entry()
+
+
+entryX = tk.Entry(frame2, borderwidth = 3, relief="sunken")
 entryX.insert(0, "Enter X Value")
-entryY = tk.Entry()
+entryY = tk.Entry(frame3, borderwidth = 3, relief="sunken")
 entryY.insert(0, "Enter Y Value")
-entryZ = tk.Entry()
+entryZ = tk.Entry(frame4, borderwidth = 3, relief="sunken")
 entryZ.insert(0, "Enter Z Value")
 
 var1 = tk.IntVar()
-c1 = tk.Checkbutton(window, text='Use Extrusion',variable=var1, onvalue=1, offvalue=0)
+c1 = tk.Checkbutton(frame5, text='Use Extrusion',variable=var1, onvalue=1, offvalue=0)
 
-text_box = tk.Text()
+text_box = tk.Text(frame1, borderwidth = 3, relief="sunken")
+text_box.insert(END, "Paste the top layer code here.")
 
+def cont_X_del():
+    return entryX.delete(0, END)
 
-#def counter(co):
-    #count = co+1
-    #return count
+def cont_X_01():
+    val_ini = entryX.get()
+    val_ini = float(val_ini)
+    val_new = val_ini + 0.1
+    val_new = str(val_new)
+    cont_X_del()
+    return entryX.insert(0, val_new)
 
+def cont_X_1():
+    val_ini = entryX.get()
+    val_ini = float(val_ini)
+    val_new = val_ini + 1
+    val_new = str(val_new)
+    cont_X_del()
+    return entryX.insert(0, val_new)
+
+def cont_Y_del():
+    return entryY.delete(0, END)
+
+def cont_Y_01():
+    val_ini = entryY.get()
+    val_ini = float(val_ini)
+    val_new = val_ini + 0.1
+    val_new = str(val_new)
+    cont_Y_del()
+    return entryY.insert(0, val_new)
+
+def cont_Y_1():
+    val_ini = entryY.get()
+    val_ini = float(val_ini)
+    val_new = val_ini + 1
+    val_new = str(val_new)
+    cont_Y_del()
+    return entryY.insert(0, val_new)
+
+def cont_Z_del():
+    return entryZ.delete(0, END)
+
+def cont_Z_01():
+    val_ini = entryZ.get()
+    val_ini = float(val_ini)
+    val_new = val_ini + 0.1
+    val_new = str(val_new)
+    cont_Z_del()
+    return entryZ.insert(0, val_new)
+
+def cont_Z_1():
+    val_ini = entryZ.get()
+    val_ini = float(val_ini)
+    val_new = val_ini + 1
+    val_new = str(val_new)
+    cont_Z_del()
+    return entryZ.insert(0, val_new)
 
 def avail_points():
     init_gcode = text_box.get("1.0", tk.END)
@@ -107,24 +172,11 @@ def avail_points():
                     T = X
                     if ((T+1) >= high_X):
                         break;
-            """
-            for k in range(temp_X):
-            Y = values_Y[i]
-            X += 1
-            #f = "|" + str('%.2f'%X) + "," + str('%.2f'%Y) + "|"
-            f = ('%.2f'%X, '%.2f'%Y)
-            available_points.append(f)
-            #print('%.2f'%X, '%.2f'%Y, sep=" , ")
-            """
+            
 
         elif (values_X[i] == values_X[i+1]):
             X = values_X[i]
-            """
-            temp_Y1 = (values_Y[i] * 10)
-            temp_Y2 = (values_Y[i+1] * 10)
-            temp_Y = abs(temp_Y2 - temp_Y1)
-            temp_Y = int(temp_Y/10)
-            """
+            
             if (values_Y[i] > values_Y[i+1]):
                 Y = values_Y[i]
                 low_Y = values_Y[i+1]
@@ -145,27 +197,9 @@ def avail_points():
                     T = Y
                     if ((T+1) >= high_Y):
                         break;
-            """
-            for k in range(temp_Y):
-            X = values_X[i]
-            if (values_Y[i] > values_Y[i+1]):
-                Y -= 1 
-            else:
-                Y += 1
-            #f = "|" + str('%.2f'%X) + "," + str('%.2f'%Y) + "|"
-            f = ('%.2f'%X, '%.2f'%Y)
-            available_points.append(f)
-            #print('%.2f'%X, '%.2f'%Y, sep=" , ")
-            """
 
         else:
             m = ((values_Y[i+1] - values_Y[i])/(values_X[i+1] - values_X[i]))
-            """
-            temp_X1 = (values_X[i] * 10)
-            temp_X2 = (values_X[i+1] * 10)
-            temp_X = abs(temp_X2 - temp_X1)
-            temp_X = int(temp_X/10)
-            """
 
             if ((values_X[i+1] > values_X[i]) and (values_Y[i+1] > values_Y[i])):
                 hyp = math.sqrt(((values_X[i] - values_X[i+1])**2) + ((values_Y[i] - values_Y[i+1])**2))
@@ -227,45 +261,20 @@ def avail_points():
                     if (Y <= low_Y or X <= low_X):
                         break;
 
-
-            """
-            if (values_X[i] > values_X[i+1]):
-            X = values_X[i+1]
-            else:
-            X = values_X[i]
-
-            for j in range(temp_X):
-            if (values_X[i] < values_X[i+1]):
-                dist_X = values_X[i+1] - values_X[i]
-                hyp = math.sqrt(((values_X[i] - values_X[i+1])**2) + ((values_Y[i] - values_Y[i+1])**2))
-                X_per_unit_hyp = dist_X / hyp
-                X -= (0.1*X_per_unit_hyp) 
-            else:
-                dist_X = values_X[i] - values_X[i+1]
-                hyp = math.sqrt(((values_X[i] - values_X[i+1])**2) + ((values_Y[i] - values_Y[i+1])**2))
-                X_per_unit_hyp = dist_X / hyp
-                X += (0.1*X_per_unit_hyp)
-            Y = (m*(X - values_X[i])) + values_Y[i]
-            #f = "|" + str('%.2f'%X) + "," + str('%.2f'%Y) + "|"
-            f = ('%.2f'%X, '%.2f'%Y)
-            available_points.append(f)
-            #print('%.2f'%X, '%.2f'%Y, sep=",")
-            """
-        #print(available_points)
         all_values.extend(available_points)
         available_points.clear()
-    #print("____________________________________________________________________________________________________________________")
 
     x, y = zip(*all_values)
     x = list(map(float, x))
     y = list(map(float, y))
+    
+    #plt.scatter(x, y)
+    #plt.savefig('foo.png', bbox_inches='tight')
     df = pd.DataFrame()
     df['X'] = x
     df['Y'] = y
-    #plt.scatter(x, y)
-    #plt.savefig('foo.png', bbox_inches='tight')
     fig_inter = px.scatter(df, x = "X", y = "Y")
-    fig_inter.show("browser")
+    fig_inter.show(renderer="browser")
     
     def openNewWindow(): 
         newWindow = Toplevel(window) 
@@ -278,89 +287,6 @@ def avail_points():
         img.image = render
         img.pack()
     #openNewWindow()
-    
-    
-    
-    """
-    all_values = []
-    available_points = []
-    for i in range(n):
-        f_init = ('%.2f'%values_X[i], '%.2f'%values_Y[i])
-        available_points.append(f_init)
-        f_fin = ('%.2f'%values_X[i+1], '%.2f'%values_Y[i+1])
-        available_points.append(f_fin)
-
-        if (values_Y[i] == values_Y[i+1]):
-            temp_X1 = (values_X[i] * 10)
-            temp_X2 = (values_X[i+1] * 10)
-            temp_X = abs(temp_X2 - temp_X1)
-            temp_X = int(temp_X/10)
-            if (values_X[i] > values_X[i+1]):
-                X = values_X[i+1]
-            else:
-                X = values_X[i]
-            for k in range(temp_X):
-                Y = values_Y[i]
-                X += 1
-                #f = "|" + str('%.2f'%X) + "," + str('%.2f'%Y) + "|"
-                f = ('%.2f'%X, '%.2f'%Y)
-                available_points.append(f)
-                #print('%.2f'%X, '%.2f'%Y, sep=" , ")
-
-        elif (values_X[i] == values_X[i+1]):
-            temp_Y1 = (values_Y[i] * 10)
-            temp_Y2 = (values_Y[i+1] * 10)
-            temp_Y = abs(temp_Y2 - temp_Y1)
-            temp_Y = int(temp_Y/10)
-            if (values_Y[i] > values_Y[i+1]):
-                Y = values_Y[i+1]
-            else:
-                Y = values_Y[i]
-            for k in range(temp_Y):
-                X = values_X[i]
-                if (values_Y[i] > values_Y[i+1]):
-                    Y -= 1 
-                else:
-                    Y += 1
-                #f = "|" + str('%.2f'%X) + "," + str('%.2f'%Y) + "|"
-                f = ('%.2f'%X, '%.2f'%Y)
-                available_points.append(f)
-                #print('%.2f'%X, '%.2f'%Y, sep=" , ")
-
-        else:
-            m = ((values_Y[i+1] - values_Y[i])/(values_X[i+1] - values_X[i]))
-            temp_X1 = (values_X[i] * 10)
-            temp_X2 = (values_X[i+1] * 10)
-            temp_X = abs(temp_X2 - temp_X1)
-            temp_X = int(temp_X/10)
-            if (values_X[i] > values_X[i+1]):
-                X = values_X[i+1]
-            else:
-                X = values_X[i]
-
-            for j in range(temp_X):
-                if (values_X[i] < values_X[i+1]):
-                    dist_X = values_X[i+1] - values_X[i]
-                    hyp = math.sqrt(((values_X[i] - values_X[i+1])**2) + ((values_Y[i] - values_Y[i+1])**2))
-                    X_per_unit_hyp = dist_X / hyp
-                    X -= (0.1*X_per_unit_hyp) 
-                else:
-                    dist_X = values_X[i] - values_X[i+1]
-                    hyp = math.sqrt(((values_X[i] - values_X[i+1])**2) + ((values_Y[i] - values_Y[i+1])**2))
-                    X_per_unit_hyp = dist_X / hyp
-                    X += (0.1*X_per_unit_hyp)
-                Y = (m*(X - values_X[i])) + values_Y[i]
-                #f = "|" + str('%.2f'%X) + "," + str('%.2f'%Y) + "|"
-                f = ('%.2f'%X, '%.2f'%Y)
-                available_points.append(f)
-                #print('%.2f'%X, '%.2f'%Y, sep=",")
-
-        #print(available_points)
-        all_values.extend(available_points)
-        available_points.clear()
-    """
-
-  
     
 
 
@@ -428,16 +354,36 @@ def add_extru(a, b, c, t):
 
 
 
-button1 = tk.Button(text="View Points",command=avail_points)
-button2 = tk.Button(text="Add Z-Movement", command= lambda: add_extru(entryX.get(), entryY.get(), entryZ.get(), var1.get()))
+button1 = tk.Button(frame1, text="Show Available Points",command=avail_points, borderwidth = 3, relief="raised", bg='blue')
 
-text_box.pack()
-button1.pack()
-entryX.pack()
-entryY.pack()
-entryZ.pack()
-c1.pack()
-button2.pack()
+button2 = tk.Button(frame5, text="Add Movement", command= lambda: add_extru(entryX.get(), entryY.get(), entryZ.get(), var1.get()))
+
+cont_X_pt = tk.Button(frame2, text="+0.1", command=cont_X_01, width=10)
+cont_X = tk.Button(frame2, text="+1", command=cont_X_1, width=10)
+
+cont_Y_pt = tk.Button(frame3, text="+0.1", command=cont_Y_01, width=10)
+cont_Y = tk.Button(frame3, text="+1", command=cont_Y_1, width=10)
+
+cont_Z_pt = tk.Button(frame4, text="+0.1", command=cont_Z_01, width=10)
+cont_Z = tk.Button(frame4, text="+1", command=cont_Z_1, width=10)
+
+
+text_box.pack(padx=10)
+button1.pack(padx = 10, pady = 10)
+entryX.pack(padx=5, pady=10, side=tk.LEFT)
+cont_X_pt.pack(padx=5, pady=20, side=tk.LEFT)
+cont_X.pack(padx=5, pady=20, side=tk.LEFT)
+
+entryY.pack(padx=5, pady=10, side=tk.LEFT)
+cont_Y_pt.pack(padx=5, pady=20, side=tk.LEFT)
+cont_Y.pack(padx=5, pady=20, side=tk.LEFT)
+
+entryZ.pack(padx=5, pady=10, side=tk.LEFT)
+cont_Z_pt.pack(padx=5, pady=20, side=tk.LEFT)
+cont_Z.pack(padx=5, pady=20, side=tk.LEFT)
+
+c1.pack(pady=10)
+button2.pack(pady=10)
 
 window.mainloop()
 
