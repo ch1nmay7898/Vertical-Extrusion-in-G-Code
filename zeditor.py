@@ -1,5 +1,6 @@
 import plotly.express as px
 import tkinter as tk
+from tkinter import ttk
 import re
 import pandas as pd
 import os
@@ -12,18 +13,36 @@ import PIL.Image
 import matplotlib.image as mpimg
 
 window = tk.Tk()
-window.title("Vertical 3D Printing")
-frame1 = Frame(window)
-frame2 = Frame(window)
-frame3 = Frame(window)
-frame4 = Frame(window)
-frame5 = Frame(window)
+window.title("Zeditor")
+container = tk.Frame(window)
+canvas = tk.Canvas(container)
+canvas.config(width=600, height=700)
+scrollbar = tk.Scrollbar(container, orient="vertical", command=canvas.yview)
+scrollable_frame = tk.Frame(canvas)
+
+scrollable_frame.bind(
+    "<Configure>",
+    lambda e: canvas.configure(
+        scrollregion=canvas.bbox("all")
+    )
+)
+
+
+
+frame1 = Frame(scrollable_frame)
+frame2 = Frame(scrollable_frame)
+frame3 = Frame(scrollable_frame)
+frame4 = Frame(scrollable_frame)
+frame5 = Frame(scrollable_frame)
 frame1.pack()
 frame2.pack()
 frame3.pack()
 frame4.pack()
 frame5.pack()
-scrollbar = Scrollbar(window)
+
+canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+canvas.update_idletasks()
+canvas.configure(yscrollcommand=scrollbar.set)
 
 greetings = tk.Label(frame1, text="G-Code Editor")
 greetings.pack(pady=10)
@@ -35,7 +54,6 @@ entryX.insert(0, "Enter X Value")
 entryY = tk.Entry(frame3, borderwidth = 3, relief="sunken")
 entryY.insert(0, "Enter Y Value")
 entryZ = tk.Entry(frame4, borderwidth = 3, relief="sunken")
-entryZ.insert(0, "Enter Z Value")
 
 var1 = tk.IntVar()
 c1 = tk.Checkbutton(frame5, text='Use Extrusion',variable=var1, onvalue=1, offvalue=0)
@@ -100,17 +118,51 @@ def cont_Z_1():
     cont_Z_del()
     return entryZ.insert(0, val_new)
 
+def count_layer():
+    full_gcode = text_box.get("1.0", tk.END)
+    layer_count = r"Layer count: ([\d]*)"
+    return layer_count
+
+
+
 def avail_points():
-    init_gcode = text_box.get("1.0", tk.END)
-    regex_X = r"X([\d]*\.?[\d]*)"
-    matches_X = re.findall(regex_X, init_gcode)
-    regex_Y = r"Y([\d]*\.?[\d]*)"
-    matches_Y = re.findall(regex_Y, init_gcode)
-    regex_Z = r"Z([\d]*\.?[\d]*)"
+    fullcode = text_box.get("1.0", tk.END)
+    matcher = r"Layer count: ([\d]*)"
+    layer_count = re.findall(matcher, fullcode)
+    layer_count = int(layer_count[0])
+    layer_count = layer_count - 1
+    layer_count = str(layer_count)
+    layer_finder = "; LAYER:"+layer_count
+    top_code="\n"
+    init_gcode="\n"
+    low_code="\n"
+    finder_flag=0
+    for lines in fullcode.splitlines():
+        if lines != layer_finder and finder_flag == 0:
+            top_code = top_code+lines+"\n"
+        if lines == layer_finder:
+            finder_flag = 1
+        if lines == "; MatterSlice Completed Successfully" and finder_flag == 1:
+            finder_flag = 2
+        if finder_flag == 1:
+            init_gcode = init_gcode+lines+"\n"
+        if finder_flag == 2:
+            low_code = low_code+lines+"\n"
+    """
+    #regex_G = r"G([\d]*\.?[\d]*)"
+    #matches_G = re.findall(regex_G, init_gcode)
+    #line_count = matches_G.count()
+    
+    regex_X = r"X([\d]+\.?[\d]+)"
+    matches_X = re.findall(regex_X, low_code)
+    regex_Y = r"Y([\d]+\.?[\d]+)"
+    matches_Y = re.findall(regex_Y, low_code)
+    """
+    regex_Z = r"Z([\d]+\.?[\d]+)"
     matches_Z = re.findall(regex_Z, init_gcode)
-    regex_E = r"E([\d]*\.?[\d]*)"
+    regex_E = r"E([\d]+\.?[\d]+)"
     matches_E = re.findall(regex_E, init_gcode)
-    regex_F = r"F([\d]*\.?[\d]*)"
+    regex_F = r"F([\d]+\.?[\d]+)"
     matches_F = re.findall(regex_F, init_gcode)
 
     values_X = []
@@ -118,11 +170,27 @@ def avail_points():
     values_Z = []
     values_E = []
     values_F = []
-    for match in matches_X:
-        values_X.append(float(match))
 
-    for match in matches_Y:
-        values_Y.append(float(match))
+    for lines in init_gcode.splitlines():
+        if lines == "M107":
+            break;
+
+        if (lines != "" and lines[0] == "G"):
+            X_reg = r"X([\d]+\.?[\d]+)"
+            X_check = re.findall(X_reg, lines)
+            Y_reg = r"Y([\d]+\.?[\d]+)"
+            Y_check = re.findall(Y_reg, lines)
+            
+            if (len(X_check) == 0):
+                values_X.append(values_X[-1])
+            else:
+                values_X.append(float(X_check[0]))
+            
+            if (len(Y_check) == 0):
+                values_Y.append(values_Y[-1])
+            else:
+                values_Y.append(float(Y_check[0]))
+
 
     for match in matches_Z:
         values_Z.append(float(match))
@@ -133,7 +201,12 @@ def avail_points():
     for match in matches_F:
         values_F.append(float(match))
     
-
+    len_z = len(values_Z)
+    if len_z > 1:
+        max_z = max(values_Z)
+    else:
+        max_z = values_Z
+    entryZ.insert(0, max_z)
     count_X = len(values_X)
     count_Y = len(values_Y) 
     count_Z = len(values_Z) 
@@ -276,6 +349,7 @@ def avail_points():
     fig_inter = px.scatter(df, x = "X", y = "Y")
     fig_inter.show(renderer="browser")
     
+    """
     def openNewWindow(): 
         newWindow = Toplevel(window) 
     
@@ -287,20 +361,37 @@ def avail_points():
         img.image = render
         img.pack()
     #openNewWindow()
-    
+    """
 
 
-def add_extru(a, b, c, t):
-    init_gcode1 = text_box.get("1.0", tk.END)
-    regex_X = r"X([\d]*\.?[\d]*)"
-    matches_X = re.findall(regex_X, init_gcode1)
-    regex_Y = r"Y([\d]*\.?[\d]*)"
-    matches_Y = re.findall(regex_Y, init_gcode1)
-    regex_Z = r"Z([\d]*\.?[\d]*)"
+def add_extru(a, b, c, t): 
+    fullcode = text_box.get("1.0", tk.END)
+    matcher = r"Layer count: ([\d]*)"
+    layer_count = re.findall(matcher, fullcode)
+    layer_count = int(layer_count[0])
+    layer_count = layer_count - 1
+    layer_count = str(layer_count)
+    layer_finder = "; LAYER:"+layer_count
+    top_code="\n"
+    init_gcode1="\n"
+    low_code="\n"
+    finder_flag=0
+    for lines in fullcode.splitlines():
+        if lines != layer_finder and finder_flag == 0:
+            top_code = top_code+lines+"\n"
+        if lines == layer_finder:
+            finder_flag = 1
+        if lines == "M107" and finder_flag == 1:
+            finder_flag = 2
+        if finder_flag == 1:
+            init_gcode1 = init_gcode1+lines+"\n"
+        if finder_flag == 2:
+            low_code = low_code+lines+"\n"
+    regex_Z = r"Z([\d]+\.?[\d]+)"
     matches_Z = re.findall(regex_Z, init_gcode1)
-    regex_E = r"E([\d]*\.?[\d]*)"
+    regex_E = r"E([\d]+\.?[\d]+)"
     matches_E = re.findall(regex_E, init_gcode1)
-    regex_F = r"F([\d]*\.?[\d]*)"
+    regex_F = r"F([\d]+\.?[\d]+)"
     matches_F = re.findall(regex_F, init_gcode1)
 
     values_X = []
@@ -308,11 +399,27 @@ def add_extru(a, b, c, t):
     values_Z = []
     values_E = []
     values_F = []
-    for match in matches_X:
-        values_X.append(float(match))
 
-    for match in matches_Y:
-        values_Y.append(float(match))
+    for lines in init_gcode1.splitlines():
+        if lines == "; MatterSlice Completed Successfully":
+            break;
+
+        if (lines != "" and lines[0] == "G"):
+            X_reg = r"X([\d]+\.?[\d]+)"
+            X_check = re.findall(X_reg, lines)
+            Y_reg = r"Y([\d]+\.?[\d]+)"
+            Y_check = re.findall(Y_reg, lines)
+            
+            if (len(X_check) == 0):
+                values_X.append(values_X[-1])
+            else:
+                values_X.append(float(X_check[0]))
+            
+            if (len(Y_check) == 0):
+                values_Y.append(values_Y[-1])
+            else:
+                values_Y.append(float(Y_check[0]))
+
 
     for match in matches_Z:
         values_Z.append(float(match))
@@ -338,7 +445,9 @@ def add_extru(a, b, c, t):
         e = (E_per_point * float(c)) + values_E[-1]
         line4 = "G1 "+"X"+str(a)+" Y"+str(b)+" Z"+str(c)+" E"+str('%.3f'%e)+" F"+str(values_F[-1])
         code_addition = "\n"+line1+"\n"+line2+"\n"+line3+"\n"+line4
-        return text_box.insert(tk.END, code_addition)
+        final_code = top_code+init_gcode1+code_addition+low_code
+        text_box.delete("1.0", "end")
+        return text_box.insert(END, final_code)
     elif (t == 0):
         high_Z = max(values_Z) + 0.1
         low_Z = min(values_Z)
@@ -349,14 +458,45 @@ def add_extru(a, b, c, t):
         line3 = "G1 "+"X"+str(a)+" Y"+str(b)+" Z"+str('%.2f'%(low_Z))+" F"+str(values_F[-1])
         line4 = "G1 "+"X"+str(a)+" Y"+str(b)+" Z"+str(c)+" F"+str(values_F[-1])
         code_addition = "\n"+line1+"\n"+line2+"\n"+line3+"\n"+line4
-        return text_box.insert(tk.END, code_addition)
+        final_code = top_code+init_gcode1+code_addition+low_code
+        text_box.delete("1.0", "end")
+        return text_box.insert(END, final_code)
 
 
+def finish():
+    fullcode = text_box.get("1.0", tk.END)
+    matcher = r"Layer count: ([\d]*)"
+    layer_count = re.findall(matcher, fullcode)
+    layer_count = int(layer_count[0])
+    layer_count = layer_count - 1
+    layer_count = str(layer_count)
+    layer_finder = "; LAYER:"+layer_count
+    top_code="\n"
+    init_gcode1="\n"
+    low_code="\n"
+    finder_flag=0
+    for lines in fullcode.splitlines():
+        if lines != layer_finder and finder_flag == 0:
+            top_code = top_code+lines+"\n"
+        if lines == layer_finder:
+            finder_flag = 1
+        if lines == "M107" and finder_flag == 1:
+            finder_flag = 2
+        if finder_flag == 1:
+            init_gcode1 = init_gcode1+lines+"\n"
+        if finder_flag == 2:
+            low_code = low_code+lines+"\n"
+    m400 = "M400 \n"
+    text_box.delete("1.0", "end")
+    final_code = top_code+init_gcode1+m400+low_code
+    return text_box.insert(END, final_code)
+    
 
+#button0 = tk.Button(frame1, text="Fetch Top Layer", command=fetch_top, relief="raised")
+button1 = tk.Button(frame1, text="Show Available Points",command=avail_points, borderwidth = 3, relief="raised")
 
-button1 = tk.Button(frame1, text="Show Available Points",command=avail_points, borderwidth = 3, relief="raised", bg='blue')
-
-button2 = tk.Button(frame5, text="Add Movement", command= lambda: add_extru(entryX.get(), entryY.get(), entryZ.get(), var1.get()))
+button2 = tk.Button(frame5, text="Add Movement", command= lambda: add_extru(entryX.get(), entryY.get(), entryZ.get(), var1.get()), relief="raised")
+button3 = tk.Button(frame5, text="Finish", command=finish, relief="raised")
 
 cont_X_pt = tk.Button(frame2, text="+0.1", command=cont_X_01, width=10)
 cont_X = tk.Button(frame2, text="+1", command=cont_X_1, width=10)
@@ -383,8 +523,11 @@ cont_Z_pt.pack(padx=5, pady=20, side=tk.LEFT)
 cont_Z.pack(padx=5, pady=20, side=tk.LEFT)
 
 c1.pack(pady=10)
-button2.pack(pady=10)
+button2.pack(padx=5, pady=10, side=tk.LEFT)
+button3.pack(padx=5, pady=10, side=tk.LEFT)
+
+container.pack()
+canvas.pack(side="left", fill="both", expand=True)
+scrollbar.pack(side="right", fill="y")
 
 window.mainloop()
-
-

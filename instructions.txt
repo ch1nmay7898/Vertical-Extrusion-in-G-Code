@@ -1,0 +1,27 @@
+Instructions for running the python script on windows:
+    Requirements:
+    1) Install python 
+    2) Install pip
+
+1. Open PowerShell
+    Search in the Start menu to open it.
+2. Use the cd command to change the directory.
+    Example:  cd C:\path\to\file\zeditor
+3. Run the following commands (in order)
+    pip install requirements.txt
+    python zeditor.py
+
+-----------------------------------------------------------
+
+Instructions for using the software:
+
+1. Locate the top layer G-Code from the complete G-Code and copy it.
+2. Paste the G-Code in the text box of zeditor app.
+3. Click on show available points to visualize the points on a graph.
+4. Drag the cursor on the points to find out co-ordinates of available points.
+5. Enter the X value and Y value.
+6. Determine the Z value depending on how tall the extrusion needs to be and enter it.
+7. Click on Add point.
+8. Now the G-Code in the text box would have been updated.
+9. To add continuous points along the X axis, Y axis or Z axis, click their respective +1 or +0.1 button to increment the value.
+10. Click add point button after each desired increment.
