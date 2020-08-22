@@ -47,170 +47,186 @@ canvas.configure(yscrollcommand=scrollbar.set)
 greetings = tk.Label(frame1, text="G-Code Editor")
 greetings.pack(pady=10)
 
-
-
 entryX = tk.Entry(frame2, borderwidth = 3, relief="sunken")
 entryX.insert(0, "Enter X Value")
 entryY = tk.Entry(frame3, borderwidth = 3, relief="sunken")
 entryY.insert(0, "Enter Y Value")
 entryZ = tk.Entry(frame4, borderwidth = 3, relief="sunken")
-
-var1 = tk.IntVar()
-c1 = tk.Checkbutton(frame5, text='Use Extrusion',variable=var1, onvalue=1, offvalue=0)
-
 text_box = tk.Text(frame1, borderwidth = 3, relief="sunken")
 text_box.insert(END, "Paste the top layer code here.")
 
-def cont_X_del():
-    return entryX.delete(0, END)
+def cont_del(entry):
+    return entry.delete(0, END)
 
-def cont_X_01():
-    val_ini = entryX.get()
+def cont_01(entry):
+    val_ini = entry.get()
     val_ini = float(val_ini)
     val_new = val_ini + 0.1
-    val_new = str(val_new)
-    cont_X_del()
-    return entryX.insert(0, val_new)
+    val_new = f"{val_new:.2f}"
+    cont_del(entry)
+    return entry.insert(0, val_new)
 
-def cont_X_1():
-    val_ini = entryX.get()
+def cont_1(entry):
+    val_ini = entry.get()
     val_ini = float(val_ini)
     val_new = val_ini + 1
     val_new = str(val_new)
-    cont_X_del()
-    return entryX.insert(0, val_new)
+    cont_del(entry)
+    return entry.insert(0, val_new)
 
-def cont_Y_del():
-    return entryY.delete(0, END)
-
-def cont_Y_01():
-    val_ini = entryY.get()
-    val_ini = float(val_ini)
-    val_new = val_ini + 0.1
-    val_new = str(val_new)
-    cont_Y_del()
-    return entryY.insert(0, val_new)
-
-def cont_Y_1():
-    val_ini = entryY.get()
-    val_ini = float(val_ini)
-    val_new = val_ini + 1
-    val_new = str(val_new)
-    cont_Y_del()
-    return entryY.insert(0, val_new)
-
-def cont_Z_del():
-    return entryZ.delete(0, END)
-
-def cont_Z_01():
-    val_ini = entryZ.get()
-    val_ini = float(val_ini)
-    val_new = val_ini + 0.1
-    val_new = str(val_new)
-    cont_Z_del()
-    return entryZ.insert(0, val_new)
-
-def cont_Z_1():
-    val_ini = entryZ.get()
-    val_ini = float(val_ini)
-    val_new = val_ini + 1
-    val_new = str(val_new)
-    cont_Z_del()
-    return entryZ.insert(0, val_new)
-
-def count_layer():
-    full_gcode = text_box.get("1.0", tk.END)
-    layer_count = r"Layer count: ([\d]*)"
-    return layer_count
-
-
-
-def avail_points():
-    fullcode = text_box.get("1.0", tk.END)
+def layer_counter(fullcode):
     matcher = r"Layer count: ([\d]*)"
     layer_count = re.findall(matcher, fullcode)
     layer_count = int(layer_count[0])
     layer_count = layer_count - 1
-    layer_count = str(layer_count)
-    layer_finder = "; LAYER:"+layer_count
-    top_code="\n"
-    init_gcode="\n"
-    low_code="\n"
-    finder_flag=0
-    for lines in fullcode.splitlines():
-        if lines != layer_finder and finder_flag == 0:
-            top_code = top_code+lines+"\n"
-        if lines == layer_finder:
-            finder_flag = 1
-        if lines == "; MatterSlice Completed Successfully" and finder_flag == 1:
-            finder_flag = 2
-        if finder_flag == 1:
-            init_gcode = init_gcode+lines+"\n"
-        if finder_flag == 2:
-            low_code = low_code+lines+"\n"
-    """
-    #regex_G = r"G([\d]*\.?[\d]*)"
-    #matches_G = re.findall(regex_G, init_gcode)
-    #line_count = matches_G.count()
-    
-    regex_X = r"X([\d]+\.?[\d]+)"
-    matches_X = re.findall(regex_X, low_code)
-    regex_Y = r"Y([\d]+\.?[\d]+)"
-    matches_Y = re.findall(regex_Y, low_code)
-    """
-    regex_Z = r"Z([\d]+\.?[\d]+)"
-    matches_Z = re.findall(regex_Z, init_gcode)
-    regex_E = r"E([\d]+\.?[\d]+)"
-    matches_E = re.findall(regex_E, init_gcode)
-    regex_F = r"F([\d]+\.?[\d]+)"
-    matches_F = re.findall(regex_F, init_gcode)
+    return str(layer_count)
 
-    values_X = []
-    values_Y = []
-    values_Z = []
-    values_E = []
-    values_F = []
-
-    for lines in init_gcode.splitlines():
-        if lines == "M107":
+def top_code(fullcode, layer_finder):
+    top_code = ""
+    for line in fullcode.splitlines():
+        if line != layer_finder:
+            top_code = top_code+line+"\n"
+        else:
             break;
+    return top_code
 
-        if (lines != "" and lines[0] == "G"):
-            X_reg = r"X([\d]+\.?[\d]+)"
-            X_check = re.findall(X_reg, lines)
-            Y_reg = r"Y([\d]+\.?[\d]+)"
-            Y_check = re.findall(Y_reg, lines)
-            
-            if (len(X_check) == 0):
-                values_X.append(values_X[-1])
+def mid_code(fullcode, layer_finder):
+    finder_flag = 0
+    mid_code = ""
+    for line in fullcode.splitlines():
+        if line == layer_finder:
+            finder_flag = 1
+        if line == "; MatterSlice Completed Successfully" and finder_flag == 1:
+            break;
+        if finder_flag == 1:
+            mid_code = mid_code+line+"\n"
+    return mid_code
+
+def end_code(fullcode, layer_finder):
+    finder_flag = 0
+    end_code = ""
+    for line in fullcode.splitlines():
+        if line == layer_finder:
+            finder_flag = 1
+        if line == "; MatterSlice Completed Successfully" and finder_flag == 1:
+            finder_flag = 2
+        if finder_flag == 2:
+            end_code = end_code+line+"\n"
+    return end_code
+
+def regexer(string, var):
+    regex = rf"{var}([\d]+\.?[\d]+)"
+    matches = re.findall(regex, string)
+    return matches
+
+def xy_matcher(mid_code, var):
+    values = []
+    for line in mid_code.splitlines():
+        if line == "M107":
+            break;
+        if (line != "" and line[0] == "G"):
+            check = regexer(line, var)
+            if (len(check) == 0):
+                values.append(values[-1])
             else:
-                values_X.append(float(X_check[0]))
-            
-            if (len(Y_check) == 0):
-                values_Y.append(values_Y[-1])
-            else:
-                values_Y.append(float(Y_check[0]))
+                values.append(float(check[0]))
+    return values
 
-
-    for match in matches_Z:
-        values_Z.append(float(match))
-
-    for match in matches_E:
-        values_E.append(float(match))
-
-    for match in matches_F:
-        values_F.append(float(match))
-    
-    len_z = len(values_Z)
+def default_z(values_z, entry):
+    len_z = len(values_z)
     if len_z > 1:
-        max_z = max(values_Z)
+        max_z = max(values_z)
     else:
-        max_z = values_Z
-    entryZ.insert(0, max_z)
+        max_z = values_z
+    entry.insert(0, max_z)
+
+def straight_movement(values_xy1, values_xy2, XY, var):
+    available_points = []
+    if (values_xy1 > values_xy2):
+        xy = values_xy1
+        low_xy = values_xy2
+
+        while True:
+            xy -= 1
+            if var == "Y":
+                f = ('%.2f'%xy, '%.2f'%XY)
+            else:
+                f = ('%.2f'%XY, '%.2f'%xy)
+            available_points.append(f)
+            T = xy
+            if ((T-1) <= low_xy):
+                break;
+    else:
+        xy = values_xy1
+        high_xy = values_xy2
+        while True:
+            xy += 1
+            if var == "Y":
+                f = ('%.2f'%xy, '%.2f'%XY)
+            else:
+                f = ('%.2f'%XY, '%.2f'%xy)
+            available_points.append(f)
+            T = xy
+            if ((T+1) >= high_xy):
+                break;
+    return available_points
+
+def x_per_unit_hyp(x1, x2, y1, y2):
+    hyp = math.sqrt(((x1 - x2)**2) + ((y1 - y2)**2))
+    dist_X = x2 - x1
+    x_per_unit_hyp = dist_X / hyp
+    return x_per_unit_hyp
+def point_slope_form(slope, x2, x1, y1):
+    y2 = (slope*(x2 - x1)) + y1
+    return ('%.2f'%x2, '%.2f'%y2), y2
+
+def diag_right_up_down(x1, x2, y1, y2, slope, x_per_unit_hyp, up_down):
+    available_points = []
+    X, high_Y, high_X, low_Y = x1, y2, x2, y2
+    while True:
+        X += (1*x_per_unit_hyp)
+        Y = (slope*(X - x1)) + y1
+        f = ('%.2f'%X, '%.2f'%Y)
+        available_points.append(f)
+        if up_down == "up":
+            if (Y >= high_Y or X >= high_X):
+                return available_points
+        else:
+            if (Y <= low_Y or X >= high_X):
+                return available_points
+
+def diag_left_up_down(x1, x2, y1, y2, slope, x_per_unit_hyp, up_down):
+    available_points = []
+    X, high_Y, low_X, low_Y = x1, y2, x2, y2
+    while True:
+        X -= (1*x_per_unit_hyp)
+        Y = (slope*(X - x1)) + y1
+        f = ('%.2f'%X, '%.2f'%Y)
+        available_points.append(f)
+        if up_down == "up":
+            if (Y >= high_Y or X <= low_X):
+                return available_points
+        else:
+            if (Y <= low_Y or X <= low_X):
+                return available_points
+def renderer(all_values):
+    x, y = zip(*all_values)
+    x, y = list(map(float, x)), list(map(float, y))
+    df = pd.DataFrame()
+    df['X'], df['Y'] = x, y
+    fig_inter = px.scatter(df, x = "X", y = "Y")
+    fig_inter.show(renderer="browser")
+
+def avail_points():
+    fullcode = text_box.get("1.0", tk.END)
+    layer_count = layer_counter(fullcode)
+    layer_finder = "; LAYER:"+layer_count
+    mid_code1 = mid_code(fullcode, layer_finder)
+    values_X = xy_matcher(mid_code1, "X")
+    values_Y = xy_matcher(mid_code1, "Y")
+    values_Z = list(map(float, regexer(mid_code1, "Z")))
+    default_z(values_Z, entryZ)
     count_X = len(values_X)
-    count_Y = len(values_Y) 
-    count_Z = len(values_Z) 
-    count_E = len(values_E)
     n = count_X - 1
 
     all_values = []
@@ -218,294 +234,87 @@ def avail_points():
     for i in range(n):
         if (values_Y[i] == values_Y[i+1]):
             Y = values_Y[i]
-            """
-            temp_X1 = (values_X[i] * 10)
-            temp_X2 = (values_X[i+1] * 10)
-            temp_X = abs(temp_X2 - temp_X1)
-            temp_X = int(temp_X/10)
-            """
-            if (values_X[i] > values_X[i+1]):
-                X = values_X[i]
-                low_X = values_X[i+1]
-
-                while True:
-                    X -= 1
-                    f = ('%.2f'%X, '%.2f'%Y)
-                    available_points.append(f)
-                    T = X
-                    if ((T+1) <= low_X):
-                        break;
-            else:
-                X = values_X[i]
-                high_X = values_X[i+1]
-                while True:
-                    X += 1
-                    f = ('%.2f'%X, '%.2f'%Y)
-                    available_points.append(f)
-                    T = X
-                    if ((T+1) >= high_X):
-                        break;
-            
-
+            available_points.extend(straight_movement(values_X[i], values_X[i+1], Y, "Y"))
         elif (values_X[i] == values_X[i+1]):
             X = values_X[i]
-            
-            if (values_Y[i] > values_Y[i+1]):
-                Y = values_Y[i]
-                low_Y = values_Y[i+1]
-                while True:
-                    Y -= 1
-                    f = ('%.2f'%X, '%.2f'%Y)
-                    available_points.append(f)
-                    T = Y
-                    if ((T+1) <= low_Y):
-                        break;
-            else:
-                Y = values_Y[i]
-                high_Y = values_Y[i+1]
-                while True:
-                    Y += 1
-                    f = ('%.2f'%X, '%.2f'%Y)
-                    available_points.append(f)
-                    T = Y
-                    if ((T+1) >= high_Y):
-                        break;
-
+            available_points.extend(straight_movement(values_Y[i], values_Y[i+1], X, "X"))
         else:
             m = ((values_Y[i+1] - values_Y[i])/(values_X[i+1] - values_X[i]))
 
             if ((values_X[i+1] > values_X[i]) and (values_Y[i+1] > values_Y[i])):
-                hyp = math.sqrt(((values_X[i] - values_X[i+1])**2) + ((values_Y[i] - values_Y[i+1])**2))
-                dist_X = values_X[i+1] - values_X[i]
-                X_per_unit_hyp = dist_X / hyp
-                X = values_X[i]
-                high_Y = values_Y[i+1]
-                high_X = values_X[i+1]
-                while True:
-                    X += (1*X_per_unit_hyp)
-                    Y = (m*(X - values_X[i])) + values_Y[i]
-                    f = ('%.2f'%X, '%.2f'%Y)
-                    available_points.append(f)
-                    if (Y >= high_Y or X >= high_X):
-                        break;
-
+                X_per_unit_hyp = x_per_unit_hyp(values_X[i], values_X[i+1], values_Y[i], values_Y[i+1])
+                available_points.extend(diag_right_up_down(values_X[i], values_X[i+1], values_Y[i], values_Y[i+1], m, X_per_unit_hyp, "up"))
             elif ((values_X[i+1] < values_X[i]) and (values_Y[i+1] > values_Y[i])):
-                hyp = math.sqrt(((values_X[i] - values_X[i+1])**2) + ((values_Y[i] - values_Y[i+1])**2))
-                dist_X = values_X[i] - values_X[i+1]
-                X_per_unit_hyp = dist_X / hyp
-                X = values_X[i]
-                high_Y = values_Y[i+1]
-                low_X = values_X[i+1]
-                while True:
-                    X -= (1*X_per_unit_hyp)
-                    Y = (m*(X - values_X[i])) + values_Y[i]
-                    f = ('%.2f'%X, '%.2f'%Y)
-                    available_points.append(f)
-                    if (Y >= high_Y or X <= low_X):
-                        break;
-            
+                X_per_unit_hyp = x_per_unit_hyp(values_X[i+1], values_X[i], values_Y[i], values_Y[i+1])
+                available_points.extend(diag_left_up_down(values_X[i], values_X[i+1], values_Y[i], values_Y[i+1], m, X_per_unit_hyp, "up"))
             elif ((values_X[i+1] > values_X[i]) and (values_Y[i+1] < values_Y[i])):
-                hyp = math.sqrt(((values_X[i] - values_X[i+1])**2) + ((values_Y[i] - values_Y[i+1])**2))
-                dist_X = values_X[i+1] - values_X[i]
-                X_per_unit_hyp = dist_X / hyp
-                X = values_X[i]
-                low_Y = values_Y[i+1]
-                high_X = values_X[i+1]
-                while True:
-                    X += (1*X_per_unit_hyp)
-                    Y = (m*(X - values_X[i])) + values_Y[i]
-                    f = ('%.2f'%X, '%.2f'%Y)
-                    available_points.append(f)
-                    if (Y <= low_Y or X >= high_X):
-                        break;
-            
+                X_per_unit_hyp = x_per_unit_hyp(values_X[i], values_X[i+1], values_Y[i], values_Y[i+1])
+                available_points.extend(diag_right_up_down(values_X[i], values_X[i+1], values_Y[i], values_Y[i+1], m, X_per_unit_hyp, "down"))
             elif ((values_X[i+1] < values_X[i]) and (values_Y[i+1] < values_Y[i])):
-                hyp = math.sqrt(((values_X[i] - values_X[i+1])**2) + ((values_Y[i] - values_Y[i+1])**2))
-                dist_X = values_X[i] - values_X[i+1]
-                X_per_unit_hyp = dist_X / hyp
-                X = values_X[i]
-                low_Y = values_Y[i+1]
-                low_X = values_X[i+1]
-                while True:
-                    X -= (1*X_per_unit_hyp)
-                    Y = (m*(X - values_X[i])) + values_Y[i]
-                    f = ('%.2f'%X, '%.2f'%Y)
-                    available_points.append(f)
-                    if (Y <= low_Y or X <= low_X):
-                        break;
-
+                X_per_unit_hyp = x_per_unit_hyp(values_X[i+1], values_X[i], values_Y[i], values_Y[i+1])
+                available_points.extend(diag_left_up_down(values_X[i], values_X[i+1], values_Y[i], values_Y[i+1], m, X_per_unit_hyp, "down"))
         all_values.extend(available_points)
         available_points.clear()
+    renderer(all_values)
 
-    x, y = zip(*all_values)
-    x = list(map(float, x))
-    y = list(map(float, y))
-    
-    #plt.scatter(x, y)
-    #plt.savefig('foo.png', bbox_inches='tight')
-    df = pd.DataFrame()
-    df['X'] = x
-    df['Y'] = y
-    fig_inter = px.scatter(df, x = "X", y = "Y")
-    fig_inter.show(renderer="browser")
-    
-    """
-    def openNewWindow(): 
-        newWindow = Toplevel(window) 
-    
-        newWindow.title("New Window") 
-    
-        load = PIL.Image.open("foo.png")
-        render = ImageTk.PhotoImage(load)
-        img = Label(newWindow, image=render)
-        img.image = render
-        img.pack()
-    #openNewWindow()
-    """
+def e_per_point(e1, e2, x1, x2, y1, y2):
+    E_val_diff = e2 - e1
+    point_dist = math.sqrt(((x1 - x2)**2) + ((y1 - y2)**2))
+    return (E_val_diff / point_dist)
 
+def add_movements(values_z, input_x, input_y, input_z, current_x, current_y, top_code, mid_code, end_code, f, e):
+    high_Z = max(values_z) + 0.1
+    low_Z = min(values_z)
+    line1 = "G1 "+"X"+str(current_x)+" Y"+str(current_y)+" Z"+str('%.2f'%high_Z)+" F"+str(f)
+    line2 = "G1 "+"X"+str(input_x)+" Y"+str(input_y)+" Z"+str('%.2f'%high_Z)+" F"+str(f)
+    line3 = "G1 "+"X"+str(input_x)+" Y"+str(input_y)+" Z"+str('%.2f'%(low_Z))+" F"+str(f)
+    line4 = "G1 "+"X"+str(input_x)+" Y"+str(input_y)+" Z"+str(input_z)+" E"+str('%.3f'%e)+" F"+str(f)
+    code_addition = "\n"+line1+"\n"+line2+"\n"+line3+"\n"+line4+"\n"
+    final_code = top_code+mid_code+code_addition+end_code
+    text_box.delete("1.0", "end")
+    return text_box.insert(END, final_code)
 
-def add_extru(a, b, c, t): 
+def add_extru(a, b, c): 
     fullcode = text_box.get("1.0", tk.END)
-    matcher = r"Layer count: ([\d]*)"
-    layer_count = re.findall(matcher, fullcode)
-    layer_count = int(layer_count[0])
-    layer_count = layer_count - 1
-    layer_count = str(layer_count)
+    layer_count = layer_counter(fullcode)
     layer_finder = "; LAYER:"+layer_count
-    top_code="\n"
-    init_gcode1="\n"
-    low_code="\n"
-    finder_flag=0
-    for lines in fullcode.splitlines():
-        if lines != layer_finder and finder_flag == 0:
-            top_code = top_code+lines+"\n"
-        if lines == layer_finder:
-            finder_flag = 1
-        if lines == "M107" and finder_flag == 1:
-            finder_flag = 2
-        if finder_flag == 1:
-            init_gcode1 = init_gcode1+lines+"\n"
-        if finder_flag == 2:
-            low_code = low_code+lines+"\n"
-    regex_Z = r"Z([\d]+\.?[\d]+)"
-    matches_Z = re.findall(regex_Z, init_gcode1)
-    regex_E = r"E([\d]+\.?[\d]+)"
-    matches_E = re.findall(regex_E, init_gcode1)
-    regex_F = r"F([\d]+\.?[\d]+)"
-    matches_F = re.findall(regex_F, init_gcode1)
-
-    values_X = []
-    values_Y = []
-    values_Z = []
-    values_E = []
-    values_F = []
-
-    for lines in init_gcode1.splitlines():
-        if lines == "; MatterSlice Completed Successfully":
-            break;
-
-        if (lines != "" and lines[0] == "G"):
-            X_reg = r"X([\d]+\.?[\d]+)"
-            X_check = re.findall(X_reg, lines)
-            Y_reg = r"Y([\d]+\.?[\d]+)"
-            Y_check = re.findall(Y_reg, lines)
-            
-            if (len(X_check) == 0):
-                values_X.append(values_X[-1])
-            else:
-                values_X.append(float(X_check[0]))
-            
-            if (len(Y_check) == 0):
-                values_Y.append(values_Y[-1])
-            else:
-                values_Y.append(float(Y_check[0]))
-
-
-    for match in matches_Z:
-        values_Z.append(float(match))
-
-    for match in matches_E:
-        values_E.append(float(match))
-
-    for match in matches_F:
-        values_F.append(float(match))
-    
-    E_val_diff = values_E[1] - values_E[0]
-    point_dist = math.sqrt(((values_X[1] - values_X[2])**2) + ((values_Y[1] - values_Y[2])**2))
-    E_per_point = (E_val_diff / point_dist)
-        
-    if (t == 1):
-        high_Z = max(values_Z) + 0.1
-        low_Z = min(values_Z)
-        current_X = values_X[-1]
-        current_Y = values_Y[-1]
-        line1 = "G1 "+"X"+str(current_X)+" Y"+str(current_Y)+" Z"+str('%.2f'%high_Z)+" F"+str(values_F[-1])
-        line2 = "G1 "+"X"+str(a)+" Y"+str(b)+" Z"+str('%.2f'%high_Z)+" F"+str(values_F[-1])
-        line3 = "G1 "+"X"+str(a)+" Y"+str(b)+" Z"+str('%.2f'%(low_Z))+" F"+str(values_F[-1])
-        e = (E_per_point * float(c)) + values_E[-1]
-        line4 = "G1 "+"X"+str(a)+" Y"+str(b)+" Z"+str(c)+" E"+str('%.3f'%e)+" F"+str(values_F[-1])
-        code_addition = "\n"+line1+"\n"+line2+"\n"+line3+"\n"+line4
-        final_code = top_code+init_gcode1+code_addition+low_code
-        text_box.delete("1.0", "end")
-        return text_box.insert(END, final_code)
-    elif (t == 0):
-        high_Z = max(values_Z) + 0.1
-        low_Z = min(values_Z)
-        current_X = values_X[-1]
-        current_Y = values_Y[-1]
-        line1 = "G1 "+"X"+str(current_X)+" Y"+str(current_Y)+" Z"+str('%.2f'%high_Z)+" F"+str(values_F[-1])
-        line2 = "G1 "+"X"+str(a)+" Y"+str(b)+" Z"+str('%.2f'%high_Z)+" F"+str(values_F[-1])
-        line3 = "G1 "+"X"+str(a)+" Y"+str(b)+" Z"+str('%.2f'%(low_Z))+" F"+str(values_F[-1])
-        line4 = "G1 "+"X"+str(a)+" Y"+str(b)+" Z"+str(c)+" F"+str(values_F[-1])
-        code_addition = "\n"+line1+"\n"+line2+"\n"+line3+"\n"+line4
-        final_code = top_code+init_gcode1+code_addition+low_code
-        text_box.delete("1.0", "end")
-        return text_box.insert(END, final_code)
-
+    top_code1 = top_code(fullcode, layer_finder)
+    init_gcode1 = mid_code(fullcode, layer_finder)
+    low_code = end_code(fullcode, layer_finder)
+    values_X = xy_matcher(init_gcode1, "X")
+    values_Y = xy_matcher(init_gcode1, "Y")
+    values_Z = list(map(float, regexer(init_gcode1, "Z")))
+    values_E = list(map(float, regexer(init_gcode1, "E")))
+    values_F = list(map(float, regexer(init_gcode1, "F")))
+    E_per_point = e_per_point(values_E[0], values_E[1], values_X[1], values_X[2], values_Y[1], values_Y[2])
+    e = (E_per_point * float(c)) + values_E[-1]
+    add_movements(values_Z, a, b, c, values_X[-1], values_Y[-1], top_code1, init_gcode1, low_code, values_F[-1], e)
 
 def finish():
     fullcode = text_box.get("1.0", tk.END)
-    matcher = r"Layer count: ([\d]*)"
-    layer_count = re.findall(matcher, fullcode)
-    layer_count = int(layer_count[0])
-    layer_count = layer_count - 1
-    layer_count = str(layer_count)
+    layer_count = layer_counter(fullcode)
     layer_finder = "; LAYER:"+layer_count
-    top_code="\n"
-    init_gcode1="\n"
-    low_code="\n"
-    finder_flag=0
-    for lines in fullcode.splitlines():
-        if lines != layer_finder and finder_flag == 0:
-            top_code = top_code+lines+"\n"
-        if lines == layer_finder:
-            finder_flag = 1
-        if lines == "M107" and finder_flag == 1:
-            finder_flag = 2
-        if finder_flag == 1:
-            init_gcode1 = init_gcode1+lines+"\n"
-        if finder_flag == 2:
-            low_code = low_code+lines+"\n"
+    top_code1 = top_code(fullcode, layer_finder)
+    init_gcode1 = mid_code(fullcode, layer_finder)
+    low_code = end_code(fullcode, layer_finder)
     m400 = "M400 \n"
     text_box.delete("1.0", "end")
-    final_code = top_code+init_gcode1+m400+low_code
+    final_code = top_code1+init_gcode1+m400+low_code
     return text_box.insert(END, final_code)
     
-
-#button0 = tk.Button(frame1, text="Fetch Top Layer", command=fetch_top, relief="raised")
 button1 = tk.Button(frame1, text="Show Available Points",command=avail_points, borderwidth = 3, relief="raised")
 
-button2 = tk.Button(frame5, text="Add Movement", command= lambda: add_extru(entryX.get(), entryY.get(), entryZ.get(), var1.get()), relief="raised")
+button2 = tk.Button(frame5, text="Add Movement", command= lambda: add_extru(entryX.get(), entryY.get(), entryZ.get()), relief="raised")
 button3 = tk.Button(frame5, text="Finish", command=finish, relief="raised")
 
-cont_X_pt = tk.Button(frame2, text="+0.1", command=cont_X_01, width=10)
-cont_X = tk.Button(frame2, text="+1", command=cont_X_1, width=10)
+cont_X_pt = tk.Button(frame2, text="+0.1", command= lambda: cont_01(entryX), width=10)
+cont_X = tk.Button(frame2, text="+1", command= lambda: cont_1(entryX), width=10)
 
-cont_Y_pt = tk.Button(frame3, text="+0.1", command=cont_Y_01, width=10)
-cont_Y = tk.Button(frame3, text="+1", command=cont_Y_1, width=10)
+cont_Y_pt = tk.Button(frame3, text="+0.1", command= lambda: cont_01(entryY), width=10)
+cont_Y = tk.Button(frame3, text="+1", command= lambda: cont_1(entryY), width=10)
 
-cont_Z_pt = tk.Button(frame4, text="+0.1", command=cont_Z_01, width=10)
-cont_Z = tk.Button(frame4, text="+1", command=cont_Z_1, width=10)
+cont_Z_pt = tk.Button(frame4, text="+0.1", command= lambda: cont_01(entryZ), width=10)
+cont_Z = tk.Button(frame4, text="+1", command= lambda: cont_1(entryZ), width=10)
 
 
 text_box.pack(padx=10)
@@ -522,7 +331,6 @@ entryZ.pack(padx=5, pady=10, side=tk.LEFT)
 cont_Z_pt.pack(padx=5, pady=20, side=tk.LEFT)
 cont_Z.pack(padx=5, pady=20, side=tk.LEFT)
 
-c1.pack(pady=10)
 button2.pack(padx=5, pady=10, side=tk.LEFT)
 button3.pack(padx=5, pady=10, side=tk.LEFT)
 
