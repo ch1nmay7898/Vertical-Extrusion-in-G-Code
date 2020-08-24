@@ -12,6 +12,7 @@ from tkinter import *
 import PIL.Image
 import matplotlib.image as mpimg
 
+#-------------------------- front end start ------------------------#
 window = tk.Tk()
 window.title("Zeditor")
 container = tk.Frame(window)
@@ -27,18 +28,18 @@ scrollable_frame.bind(
     )
 )
 
-
-
 frame1 = Frame(scrollable_frame)
 frame2 = Frame(scrollable_frame)
 frame3 = Frame(scrollable_frame)
 frame4 = Frame(scrollable_frame)
 frame5 = Frame(scrollable_frame)
+frame6 = Frame(scrollable_frame)
 frame1.pack()
 frame2.pack()
 frame3.pack()
 frame4.pack()
 frame5.pack()
+frame6.pack()
 
 canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
 canvas.update_idletasks()
@@ -54,6 +55,8 @@ entryY.insert(0, "Enter Y Value")
 entryZ = tk.Entry(frame4, borderwidth = 3, relief="sunken")
 text_box = tk.Text(frame1, borderwidth = 3, relief="sunken")
 text_box.insert(END, "Paste the top layer code here.")
+#-------------------------- front end finish ------------------------#
+
 
 def cont_del(entry):
     return entry.delete(0, END)
@@ -70,7 +73,7 @@ def cont_1(entry):
     val_ini = entry.get()
     val_ini = float(val_ini)
     val_new = val_ini + 1
-    val_new = str(val_new)
+    val_new = f"{val_new:.2f}"
     cont_del(entry)
     return entry.insert(0, val_new)
 
@@ -122,7 +125,7 @@ def regexer(string, var):
 def xy_matcher(mid_code, var):
     values = []
     for line in mid_code.splitlines():
-        if line == "M107":
+        if line == "; MatterSlice Completed Successfully":
             break;
         if (line != "" and line[0] == "G"):
             check = regexer(line, var)
@@ -133,12 +136,13 @@ def xy_matcher(mid_code, var):
     return values
 
 def default_z(values_z, entry):
-    len_z = len(values_z)
-    if len_z > 1:
-        max_z = max(values_z)
-    else:
-        max_z = values_z
-    entry.insert(0, max_z)
+    if entry.get() == "":
+        len_z = len(values_z)
+        if len_z > 1:
+            max_z = max(values_z)
+        else:
+            max_z = values_z
+        entry.insert(0, max_z)
 
 def straight_movement(values_xy1, values_xy2, XY, var):
     available_points = []
@@ -217,7 +221,7 @@ def renderer(all_values):
     fig_inter = px.scatter(df, x = "X", y = "Y")
     fig_inter.show(renderer="browser")
 
-def avail_points():
+def avail_points(render_flag):
     fullcode = text_box.get("1.0", tk.END)
     layer_count = layer_counter(fullcode)
     layer_finder = "; LAYER:"+layer_count
@@ -255,7 +259,10 @@ def avail_points():
                 available_points.extend(diag_left_up_down(values_X[i], values_X[i+1], values_Y[i], values_Y[i+1], m, X_per_unit_hyp, "down"))
         all_values.extend(available_points)
         available_points.clear()
-    renderer(all_values)
+    if render_flag == 1:
+        renderer(all_values)
+    else:
+        return all_values
 
 def e_per_point(e1, e2, x1, x2, y1, y2):
     E_val_diff = e2 - e1
@@ -301,32 +308,90 @@ def finish():
     text_box.delete("1.0", "end")
     final_code = top_code1+init_gcode1+m400+low_code
     return text_box.insert(END, final_code)
-    
-button1 = tk.Button(frame1, text="Show Available Points",command=avail_points, borderwidth = 3, relief="raised")
 
-button2 = tk.Button(frame5, text="Add Movement", command= lambda: add_extru(entryX.get(), entryY.get(), entryZ.get()), relief="raised")
-button3 = tk.Button(frame5, text="Finish", command=finish, relief="raised")
+def add_percentage_ver(entryx, entryz, entryper, available_points):
+    x = float(entryx.get())
+    z = float(entryz.get())
+    per = int(entryper.get())
+    xpoints, ypoints = (zip(*available_points))
+    xpoints, ypoints = list(map(float, xpoints)), list(map(float, ypoints))
+    yhigh, ylow = 0, 10000
+    for i in range(len(available_points)):
+        if (x - 0.5) <= xpoints[i] <= (x + 0.5) and ypoints[i] > yhigh:
+            yhigh = ypoints[i]
+        if (x - 0.5) <= xpoints[i] <= (x + 0.5) and ypoints[i] < ylow:
+            ylow = ypoints[i] 
+    num_points = int((int(yhigh - ylow) - 1)*(per/100))
+    point_dist = int(yhigh - ylow) / (num_points + 1)
+    y = ylow
+    for i in range(num_points):
+        if y > yhigh:
+            break;
+        add_extru(x, y, z)
+        y += point_dist
+        y = float(f"{y:.2f}")
 
-cont_X_pt = tk.Button(frame2, text="+0.1", command= lambda: cont_01(entryX), width=10)
-cont_X = tk.Button(frame2, text="+1", command= lambda: cont_1(entryX), width=10)
+def add_percentage_hor(entryy, entryz, entryper, available_points):
+    y = float(entryy.get())
+    z = float(entryz.get())
+    per = int(entryper.get())
+    xpoints, ypoints = (zip(*available_points))
+    xpoints, ypoints = list(map(float, xpoints)), list(map(float, ypoints))
+    xhigh, xlow = 0, 10000
+    for i in range(len(available_points)):
+        if (y - 0.5) <= ypoints[i] <= (y + 0.5) and xpoints[i] > xhigh:
+            xhigh = xpoints[i]
+        if (y - 0.5) <= ypoints[i] <= (y + 0.5) and xpoints[i] < xlow:
+            xlow = xpoints[i] 
+    num_points = int((int(xhigh - xlow) - 1)*(per/100))
+    point_dist = int(xhigh - xlow) / (num_points + 1)
+    x = xlow
+    for i in range(num_points):
+        if x > xhigh:
+            break;
+        add_extru(x, y, z)
+        x += point_dist
+        x = float(f"{x:.2f}")
 
-cont_Y_pt = tk.Button(frame3, text="+0.1", command= lambda: cont_01(entryY), width=10)
-cont_Y = tk.Button(frame3, text="+1", command= lambda: cont_1(entryY), width=10)
+#-------------------------- front end start ------------------------#
 
-cont_Z_pt = tk.Button(frame4, text="+0.1", command= lambda: cont_01(entryZ), width=10)
-cont_Z = tk.Button(frame4, text="+1", command= lambda: cont_1(entryZ), width=10)
+button1 = tk.Button(frame1, text="Show Available Points",command= lambda: avail_points(1), borderwidth = 3, relief="raised")
 
+button2 = tk.Button(frame6, text="Add Vertical Movement", command= lambda: add_extru(entryX.get(), entryY.get(), entryZ.get()), relief="raised")
+button3 = tk.Button(frame6, text="Finish", command=finish, relief="raised")
+
+cont_X_pt = tk.Button(frame2, text="+0.1 mm", command= lambda: cont_01(entryX), width=10)
+cont_X = tk.Button(frame2, text="+1 mm", command= lambda: cont_1(entryX), width=10)
+
+cont_Y_pt = tk.Button(frame3, text="+0.1 mm", command= lambda: cont_01(entryY), width=10)
+cont_Y = tk.Button(frame3, text="+1 mm", command= lambda: cont_1(entryY), width=10)
+
+cont_Z_pt = tk.Button(frame4, text="+0.1 mm", command= lambda: cont_01(entryZ), width=10)
+cont_Z = tk.Button(frame4, text="+1 mm", command= lambda: cont_1(entryZ), width=10)
+
+label_x = tk.Label(frame2, text="X")
+label_y = tk.Label(frame3, text="Y")
+label_z = tk.Label(frame4, text="Z")
+
+label_per_hor = tk.Label(frame5, text="Percentage of points:")
+entryXper = tk.Entry(frame5, borderwidth = 3, relief="sunken", width = 5)
+but_ver = tk.Button(frame5, text="Add Vertically", width=13, command= lambda: add_percentage_ver(entryX, entryZ, entryXper, avail_points(0)))
+but_hor = tk.Button(frame5, text="Add Horizontally", width=13, command= lambda: add_percentage_hor(entryY, entryZ, entryXper, avail_points(0)))
 
 text_box.pack(padx=10)
 button1.pack(padx = 10, pady = 10)
+
+label_x.pack(padx=5, pady=10, side=tk.LEFT)
 entryX.pack(padx=5, pady=10, side=tk.LEFT)
 cont_X_pt.pack(padx=5, pady=20, side=tk.LEFT)
 cont_X.pack(padx=5, pady=20, side=tk.LEFT)
 
+label_y.pack(padx=5, pady=10, side=tk.LEFT)
 entryY.pack(padx=5, pady=10, side=tk.LEFT)
 cont_Y_pt.pack(padx=5, pady=20, side=tk.LEFT)
 cont_Y.pack(padx=5, pady=20, side=tk.LEFT)
 
+label_z.pack(padx=5, pady=10, side=tk.LEFT)
 entryZ.pack(padx=5, pady=10, side=tk.LEFT)
 cont_Z_pt.pack(padx=5, pady=20, side=tk.LEFT)
 cont_Z.pack(padx=5, pady=20, side=tk.LEFT)
@@ -334,8 +399,16 @@ cont_Z.pack(padx=5, pady=20, side=tk.LEFT)
 button2.pack(padx=5, pady=10, side=tk.LEFT)
 button3.pack(padx=5, pady=10, side=tk.LEFT)
 
+
+label_per_hor.pack(padx=5, pady=10, side=tk.LEFT)
+entryXper.pack(padx=5, pady=10, side=tk.LEFT)
+but_ver.pack(padx=5, pady=10, side=tk.LEFT)
+but_hor.pack(padx=5, pady=10, side=tk.LEFT)
+
 container.pack()
 canvas.pack(side="left", fill="both", expand=True)
 scrollbar.pack(side="right", fill="y")
 
 window.mainloop()
+
+#-------------------------- front end finish ------------------------#
