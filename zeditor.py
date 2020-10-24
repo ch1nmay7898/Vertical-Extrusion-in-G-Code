@@ -269,14 +269,14 @@ def e_per_point(e1, e2, x1, x2, y1, y2):
     point_dist = math.sqrt(((x1 - x2)**2) + ((y1 - y2)**2))
     return (E_val_diff / point_dist)
 
-def add_movements(values_z, input_x, input_y, input_z, current_x, current_y, top_code, mid_code, end_code, f, e):
+def add_movements(values_z, input_x, input_y, input_z, current_x, current_y, top_code, mid_code, end_code, e):
     high_Z = max(values_z) + 0.1
     low_Z = min(values_z)
-    line1 = "G1 "+"X"+str(current_x)+" Y"+str(current_y)+" Z"+str('%.2f'%high_Z)+" F"+str(f)
-    line2 = "G1 "+"X"+str(input_x)+" Y"+str(input_y)+" Z"+str('%.2f'%high_Z)+" F"+str(f)
-    line3 = "G1 "+"X"+str(input_x)+" Y"+str(input_y)+" Z"+str('%.2f'%(low_Z))+" F"+str(f)
-    line4 = "G1 "+"X"+str(input_x)+" Y"+str(input_y)+" Z"+str(input_z)+" E"+str('%.3f'%e)+" F"+str(f)
-    code_addition = "\n"+line1+"\n"+line2+"\n"+line3+"\n"+line4+"\n"
+    line1 = "G1 "+"X"+str(current_x)+" Y"+str(current_y)+" Z"+str('%.2f'%high_Z)+" F200"
+    line2 = "G1 "+"X"+str(input_x)+" Y"+str(input_y)+" Z"+str('%.2f'%high_Z)+" F4800"
+    line3 = "G1 "+"X"+str(input_x)+" Y"+str(input_y)+" Z"+str('%.2f'%(low_Z))
+    line4 = "G1 "+"X"+str(input_x)+" Y"+str(input_y)+" Z"+str(input_z)+" E"+str('%.3f'%e)+" F500"
+    code_addition = "\n"+line1+"\n"+"M400"+"\n"+"M86 B1 D0"+"\n"+line2+"\n"+line3+"\n"+line4+"\n"+"M400"+"\n"+"M86 B1 D1"+"\n"
     final_code = top_code+mid_code+code_addition+end_code
     text_box.delete("1.0", "end")
     return text_box.insert(END, final_code)
@@ -292,10 +292,10 @@ def add_extru(a, b, c):
     values_Y = xy_matcher(init_gcode1, "Y")
     values_Z = list(map(float, regexer(init_gcode1, "Z")))
     values_E = list(map(float, regexer(init_gcode1, "E")))
-    values_F = list(map(float, regexer(init_gcode1, "F")))
+    #values_F = list(map(float, regexer(init_gcode1, "F")))
     E_per_point = e_per_point(values_E[0], values_E[1], values_X[1], values_X[2], values_Y[1], values_Y[2])
     e = (E_per_point * float(c)) + values_E[-1]
-    add_movements(values_Z, a, b, c, values_X[-1], values_Y[-1], top_code1, init_gcode1, low_code, values_F[-1], e)
+    add_movements(values_Z, a, b, c, values_X[-1], values_Y[-1], top_code1, init_gcode1, low_code, e)
 
 def finish():
     fullcode = text_box.get("1.0", tk.END)
